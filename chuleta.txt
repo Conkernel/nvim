@@ -1,0 +1,386 @@
+----@ LUA / NVIM  @----
+
+-- Recursos usados:
+-- https://github.com/nanotee/nvim-lua-guide
+
+
+-- Modos de Vim:
+
+Normal mode: [ escape ] Modo predeterminado donde se realizan operaciones de navegación y edición.
+Insert mode: [ i,a,o,s,... ] Modo para escribir texto en el archivo.
+Visual mode: [
+  v -> selecciona caracteres
+  V -> selecciona líneas enteras
+],
+
+Command-line mode: [:] Modo para ingresar comandos de Vim.
+
+
+-- Comandos Básicos:
+
+yaw: copia palabra actual (yank actual word)
+yy: Copiar línea actual.
+daw: borra palabra actual y la pone en el portapapeles
+dd: Cortar línea actual.
+p: Pegar texto.
+"0p: Pega el texto que había en el portapapeles antes de haber borrado o cortado una palabra
+<Shift> + P: Pega en la línea de arriba
+Shift + Insert: Pega contenido del portapapeles del sistema usando Mobaxterm
+u: Deshacer el último cambio.
+Ctrl + r: Rehacer el último cambio.
+!comando : Ejecuta comandos desde vim
+-- Navegación:
+
+Control + w: Cambia la posición del cursor entre buffers o ventanas
+h, j, k, l: Mover el cursor hacia la izquierda, abajo, arriba y derecha respectivamente.
+w: Moverse hacia adelante por palabras.
+b: Moverse hacia atrás por palabras.
+0: Ir al inicio de la línea.
+$: Ir al final de la línea.
+gg: Ir al inicio del archivo.
+G: Ir al final del archivo.
+:buffers : muestra los buffers activos. Para camiar a alguno de ellos, usar 'b:x', donde x es el número de buffer al que cambiamos
+
+-- Edición:
+d3j: borra línea actual y las tres siguientes hacia abajo
+d3k: borra línea actual y las tres siguientes hacia arriba
+d$: borra hasta el fin de la línea actual
+d0 : borra hasta comienzo de línea
+x: Eliminar carácter bajo el cursor.
+X: Eliminar carácter antes del cursor.
+r: Reemplazar carácter bajo el cursor.
+cw: Cambiar palabra.
+cc: Cambiar línea.
+d+G : borra desde la línea actual hasta el final del fichero
+Ctrl + v: Ingresar a modo visual de bloque.
+:r <fichero> : vuelca el contenido del fichero elegido en el fichero actual (a partir de donde se ecneuntra el cursor)
+:r !comando : vuelca la salida del comando ejecutado en el fichero actual (a partir de la posición actual del cursor)
+"xp: Dónde x es él número que indica cuánto atrás queremos elegir el contenido del portapapeles y pegarlo. "0p significa pegar el contenido que había anteriormente en el portapapeles
+df<caracter> : Borra desde el cursor hasta coincidir con el caracter que le indiquemos (lo incluye)
+yf<caracter> : Copia desde el cursor hasta coincidir con el caracter que le indiquemos
+d2f<caracter> : Borra hasta la posición de la segunda ocurrencia con el caracter indicado
+
+* Estando en el modo visual, si queremos empezar a editar una línea completa, pulsar la "c". Si estamos en modo visual de bloque, reemplezará la línea completa por lo que estemos empezando a escribir. Si estamos en modo visual de caracter, sobreescribirá solo el caracter en el que estábamos posicionados.
+
+
+
+
+-- Búsqueda y Reemplazo:
+
+/texto: Buscar texto hacia adelante.
+?texto: Buscar texto hacia atrás.
+n: Ir a la siguiente coincidencia de búsqueda.
+N: Ir a la coincidencia anterior de búsqueda.
+:%s/buscar/sustituir/g: Reemplazar "buscar" con "sustituir" en todo el archivo.
+:s/buscar/sustituir/gc: Reemplazar "buscar" con "sustituir" en la línea actual con confirmación.
+:s/buscar/sustituir/ : Reemplazar.. pero sólo la primera ocurrencia
+:s/buscar/sustiruir/gi : La i indica que es insensitivo a mayúsculas...
+:s/buscar/sustiruir/gI : La I indica que es SENSITIVO a mayúsculas...
+:s#buscar#sustituir/# -> mismo funcionamiento, pero es más cómodo por si la palabra a buscar lleva alguna barra "/".
+g* : Buscar la palabra en la que tenemos el cursor : Ponernos encima de la palabra queramos buscar, y pulsar * repetidamente
+* : Hace lo mismo, pero solo cuenta los caracteres a partir de la posición del cursor
+
+
+
+-- División de Pantallas:
+
+:sp: Dividir la ventana horizontalmente.
+:vsp: Dividir la ventana verticalmente.
+Ctrl + w seguido de j, k, h o l: Cambiar entre ventanas divididas (tb sirven las flechas)
+
+
+
+-- Visualización:
+:set (no)wrap : (des)activa el ajuste de línea
+:nohl : desactiva el highlight en una búsqueda
+
+
+
+-- Modo terminal
+
+<leader>t : abre una ventana de terminal en modo horizontal
+
+<leader>tv : abre una ventana de terminal en modo vertical
+
+<Control> + \ + n : Sale del modo insert en la terminal
+
+
+
+
+-- @@@@@ LUA @@@@@---------------------------------------------------------
+
+
+-- Lanzar un módulo con soporte para errores en, por ejemplo init.lua:
+
+local ok, _ = pcall(require, 'module_with_error')
+if not ok then
+  -- not loaded
+end
+
+
+
+-- Al igual que los archivos Vimscript, los archivos Lua se pueden cargar automáticamente desde carpetas especiales en su archivo runtimepath. Actualmente, se admiten las siguientes carpetas:
+
+colors/
+compiler/
+ftplugin/
+ftdetect/
+indent/
+plugin/
+syntax/
+
+-- Nota: en un directorio de tiempo de ejecución, todos *.vimlos archivos se obtienen antes que *.lualos archivos.
+
+
+
+-- Los scripts de varias líneas son posibles utilizando la sintaxis heredoc:
+
+echo "Here's a bigger chunk of Lua code"
+lua << EOF
+local mod = require('mymodule')
+local tbl = {1, 2, 3}
+for k, v in ipairs(tbl) do
+    mod.method(v)
+end
+print(tbl)
+EOF
+
+
+-- Neovim provides 3 Ex commands to source Lua files:
+:runtime -> es algo diferente (https://neovim.io/doc/user/repeat.html#:runtime)
+:luafile ~/foo/bar/baz/myluafile.lua
+:luafile %
+:source ~/foo/bar/baz/myluafile.lua
+(:source also supports ranges, which can be useful to only execute part of a script:
+:1,10source  )
+
+
+
+
+-- diferencia entre require require() y luafile,source o runtime:
+
+require() :
+busca módulos en lua/carpetas en su'runtimepath'
+
+
+:luafile, :sourcey :runtime :
+-- No soportan módulos. tome una ruta que sea absoluta o relativa al directorio de trabajo de la ventana actual
+-- :runtime utiliza la 'runtimepath'opción para buscar archivos
+
+
+-- Ejecutar un comando vimscript desde lua:
+vim.api.nvim_command() (es lo mismo que vim.cmd () )
+
+vim.api.nvim_command('new')
+vim.cmd('wincmd H')
+vim.api.nvim_command('set nonumber')
+vim.cmd('%s/foo/bar/g')
+
+-- en muchas ocasxiones hay que escapar caracteres, así que lo mejor sería hacer uso de doble bracket:
+vim.cmd('%s/\\Vfoo/bar/g')
+vim.cmd([[%s/\Vfoo/bar/g]])
+
+
+-- Neovim proporciona un conjunto de funciones API para configurar una opción u obtener su valor actual:
+
+Opciones globales:
+vim.api.nvim_set_option()
+vim.api.nvim_get_option()
+
+Opciones locales de búfer:
+vim.api.nvim_buf_set_option()
+vim.api.nvim_buf_get_option()
+
+Opciones locales de ventana:
+vim.api.nvim_win_set_option()
+vim.api.nvim_win_get_option()
+
+-- Las opciones booleanas (como (no)number) deben configurarse en trueo false:
+
+vim.api.nvim_set_option('smarttab', false)
+print(vim.api.nvim_get_option('smarttab')) -- false
+
+-- Las opciones locales de búfer y locales de ventana también necesitan un número de búfer o un número de ventana (al usar 0se establecerá/obtendrá la opción para el búfer/ventana actual):
+
+vim.api.nvim_win_set_option(0, 'number', true)
+vim.api.nvim_buf_set_option(10, 'shiftwidth', 4)
+print(vim.api.nvim_win_get_option(0, 'number')) -- true
+print(vim.api.nvim_buf_get_option(10, 'shiftwidth')) -- 4
+
+
+-- Hay algunos metaaccesores disponibles si desea configurar opciones de una manera más "idiomática". Básicamente, envuelven las funciones API anteriores y le permiten manipular opciones como si fueran variables:
+
+vim.o: se comporta como:let &{option-name}
+vim.go: se comporta como:let &g:{option-name}
+vim.bo: se comporta como :let &l:{option-name}para las opciones locales del búfer
+vim.wo: se comporta como :let &l:{option-name}para las opciones locales de ventana
+
+-- Si no se proporciona nº de buffer o ventana, se usa el actual
+
+-- más opciones de uso:
+vim.opt: se comporta como :set
+vim.opt_global: se comporta como :setglobal
+vim.opt_local: se comporta como :setlocal
+
+
+
+
+--- Uso de variables:
+
+-- Las variables internas se pueden manipular de forma más intuitiva utilizando estos metaaccesores:
+
+vim.g: variables globales
+vim.b: variables de búfer
+vim.w: variables de ventana
+vim.t: variables de pestaña
+vim.v: variables Vim predefinidas
+vim.env: Variables de entorno
+
+vim.g.some_global_variable = {
+    key1 = 'value',
+    key2 = 300
+}
+
+-- Para eliminar una de estas variables, simplemente asígnele nil:
+vim.g.some_global_variable = nil
+
+
+-- Para llamar a una función de vmscript:
+vim.fn{función}()
+-- ejemplo:
+print(vim.fn.printf('Hello from %s', 'Lua'))
+
+
+
+-- en ocasiones, algunas funciones devuelven 1 o 0 en vez de true o false. En ese caso 1 s verdadero, y 0 falso
+
+--- Definiendo Mappings:
+
+-- Neovim proporciona una lista de funciones API para configurar, obtener y eliminar asignaciones:
+-- https://github.com/nanotee/nvim-lua-guide#defining-mappings
+
+-- Mapeos globales:
+vim.api.nvim_set_keymap()
+vim.api.nvim_get_keymap()
+vim.api.nvim_del_keymap()
+
+-- Asignaciones locales de búfer:
+vim.api.nvim_buf_set_keymap()
+vim.api.nvim_buf_get_keymap()
+vim.api.nvim_buf_del_keymap()
+
+-- Ejemplo:
+
+vim.api.nvim_set_keymap()yvim.api.nvim_buf_set_keymap()
+
+-- El primer argumento pasado a la función es una cadena que contiene el nombre del modo para el cual la asignación tendrá efecto:
+
+-- Valor de cadena	   	Modos afectados   	      Euivalente de vimscript
+
+''(cadena vacía)    	  Normal, Visual,
+                        Seleccionar,
+                        Operador pendiente 	      :map
+
+'n'	                   	Normal	                  :nmap
+
+'v'	                   	Visual y Seleccionar	    :vmap
+
+'s'	                   	Seleccionar	              :smap
+
+'x'	                   	Visual	                  :xmap
+
+'o'	                   	Pendiente de operador	    :omap
+
+'!'	                    Insertar y
+                        línea de comando      	  :map!
+'i'	                   	Insertar	                :imap
+
+'l'	                   	Insertar,
+                        línea de comando,
+                        Lang-Arg	                :lmap
+
+'c'	                   	Línea de comando	        :cmap
+
+'t'	                  	Terminal	                :tmap
+
+
+-- ejemplo:
+
+vim.api.nvim_set_keymap('n', '<Leader><Space>', ':set hlsearch!<CR>', { noremap = true, silent = true })
+-- :nnoremap <silent> <Leader><Space> :set hlsearch<CR>
+
+-- vim.keymap (a partir de la versión 0.7 de nvim)
+
+-- #Neovim proporciona dos funciones para configurar/eliminar asignaciones:
+
+vim.keymap.set()
+vim.keymap.del()
+
+-- vim.keymap.set()toma una cadena como primer argumento. También puede ser una tabla de cadenas para definir asignaciones para múltiples modos a la vez:
+
+vim.keymap.set('n', '<Leader>ex1', '<Cmd>lua vim.notify("Example 1")<CR>')
+vim.keymap.set({'n', 'c'}, '<Leader>ex2', '<Cmd>lua vim.notify("Example 2")<CR>')
+
+-- El cuarto argumento (opcional) es una tabla de opciones que corresponden a las opciones pasadas a vim.api.nvim_set_keymap(), con algunas adiciones (consulte :help vim.keymap.set()la lista completa).
+
+vim.keymap.set('n', '<Leader>ex1', '<Cmd>echomsg "Example 1"<CR>', {buffer = true})
+vim.keymap.set('n', '<Leader>ex2', function() print('Example 2') end, {desc = 'Prints "Example 2" to the message area'})
+
+
+
+--- Definición de comandos de usuario (nvim 7.0 o +)
+
+-- Comandos de usuario globales:
+vim.api.nvim_create_user_command()
+vim.api.nvim_del_user_command()
+
+-- Comandos de usuario locales del búfer:
+vim.api.nvim_buf_create_user_command()
+vim.api.nvim_buf_del_user_command()
+
+vim.api.nvim_create_user_command('Upper', 'echo toupper(<q-args>)', { nargs = 1 })
+-- :command! -nargs=1 Upper echo toupper(<q-args>)
+
+vim.cmd('Upper hello world') -- prints "HELLO WORLD"
+
+
+
+-- Recargar módulos en caché
+
+-- En Lua, la require()función almacena en caché los módulos. Esto es bueno para el rendimiento, pero puede hacer que trabajar con complementos sea un poco engorroso porque los módulos no se actualizan en require()llamadas posteriores.
+
+-- Si desea actualizar el caché de un módulo en particular, debe modificar la package.loadedtabla global:
+
+package.loaded['modname'] = nil
+require('modname') -- loads an updated version of module 'modname'
+
+-- El complemento nvim-lua/plenary.nvim tiene una función personalizada que hace esto por usted.
+
+
+--  Si usamos cadenas con doble corchete, no usar espacios entre ellos y la cadena:
+
+vim.api.nvim_set_keymap('n', '<Leader>f', [[ <Cmd>call foo()<CR> ]], {noremap = true})
+
+-- En el ejemplo anterior, <Leader>fse asigna a <Space><Cmd>call foo()<CR><Space>en lugar de <Cmd>call foo()<CR>.
+
+
+
+-- luacheck:
+
+-- Puede hacer que luacheck reconozca el vimglobal poniendo esta configuración en ~/.luacheckrc(o $XDG_CONFIG_HOME/luacheck/.luacheckrc):
+
+globals = {
+    "vim",
+}
+
+
+-- Aignar atajos a un comando de nvim:
+
+ config = function()
+  vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal right<CR>', {})
+end
+
+
+
+
+
